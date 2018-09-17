@@ -13,6 +13,9 @@
  * Licensed under the MIT license:
  * https://opensource.org/licenses/MIT
  */
+ 
+
+require('tritanium.blockchain.wallet.php');
 define("PATH","/var/www/html/db");  
 define("MASTER_NODE","http://traceabilityblockchain.io/data/"); 
 ini_set('display_errors',1);
@@ -33,57 +36,41 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, "EXEC=CTRL");
 curl_exec($ch); 
 curl_close($ch);
 fclose($fp);
-	
-$fp = fopen (PATH . '/ledger.ctrl', 'w+');	
-$ch = curl_init(MASTER_NODE . "api.tritanium.ledger.php");
-curl_setopt($ch, CURLOPT_TIMEOUT, 500);
-curl_setopt($ch, CURLOPT_FILE, $fp); 
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_POSTFIELDS, "EXEC=LEDGER");	
-curl_exec($ch); 
-curl_close($ch);
-fclose($fp);
 
-$csvAsArray = array_map('str_getcsv', file(PATH . "/ledger.ctrl"));
+$X=New TritaniumRpcWallet("Loipol229!");
+$array=$X->getTraceLedger(1,99999);
 
-$new_files = fopen (PATH . '/newfiles.ctrl', 'w+');		
-foreach ($csvAsArray as $hash) {
-$fp=PATH . "/" . $hash[1] . ".h";
-if (!file_exists($fp)) {
-fwrite($new_files,$hash[0] . "," . $hash[1] . "\r\n");
-
-echo "Header: " . $hash[1] . "\r\n";
-
-$fp = fopen (PATH . '/' . $hash[1] . '.h', 'w+');	
-$ch = curl_init(MASTER_NODE . "api.tritanium.file.php?file=" . urlencode($hash[1]));
-curl_setopt($ch, CURLOPT_TIMEOUT, 500);
-curl_setopt($ch, CURLOPT_FILE, $fp); 
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_POST, true);
-//curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);	
-curl_exec($ch); 
-curl_close($ch);
-fclose($fp);			
+foreach ($array as $hash) {
+	$fp=PATH . "/" . $hash['BLOCK_HASH'] . ".h";
+	if (!file_exists($fp)) {
+		echo "Header: " . $hash['BLOCK_HASH'] . ".h\r\n";
+		$fp = fopen (PATH . '/' . $hash['BLOCK_HASH'] . '.h' , 'w+');	
+		$ch = curl_init($hash['BLOCK_URL'] . "api.tritanium.header.php?file=" . urlencode($hash['BLOCK_HASH']));
+		curl_setopt($ch, CURLOPT_TIMEOUT, 500);
+		curl_setopt($ch, CURLOPT_FILE, $fp); 
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_exec($ch); 
+		curl_close($ch);
+		fclose($fp);			
+	}
 }
-}
-fclose($new_files);
 
-foreach ($csvAsArray as $hash) {
-$fp=PATH . "/" . $hash[1] . ".b";
-if (!file_exists($fp)) {			
-$fp = fopen (PATH . '/' . $hash[1] . '.b', 'w+');	
-echo "Block: " . $hash[1] . "\r\n";
-$ch = curl_init(MASTER_NODE . "api.tritanium.file.php?file=" . urlencode($hash[1]));
-curl_setopt($ch, CURLOPT_TIMEOUT, 50);
-curl_setopt($ch, CURLOPT_FILE, $fp); 
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_POST, true);
-//curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);	
-curl_exec($ch); 
-curl_close($ch);
-fclose($fp);			
-}
+foreach ($array as $hash) {
+	$fp=PATH . "/" . $hash['BLOCK_HASH'] . ".b";
+	if (!file_exists($fp)) {			
+		$fp = fopen (PATH . '/' . $hash['BLOCK_HASH'] . '.b', 'w+');
+		echo "Block: " . $hash['BLOCK_HASH'] . "h\r\n";
+		$ch = curl_init($hash['BLOCK_URL'] . "api.tritanium.block.php?file=" . urlencode($hash['BLOCK_HASH']));
+		curl_setopt($ch, CURLOPT_TIMEOUT, 50);
+		curl_setopt($ch, CURLOPT_FILE, $fp); 
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_exec($ch); 
+		curl_close($ch);
+		fclose($fp);			
+	}
 }
 
 ?>
+

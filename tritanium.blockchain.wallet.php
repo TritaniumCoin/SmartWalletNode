@@ -49,7 +49,7 @@ class TritaniumRpcWallet {
 	}
 	
 	private function callApi($u) {
-		unlink("api.log");
+		if (file_exists("api.log")) unlink("api.log");
 		$v = "curl -d '" . $u . "' http://localhost:8070/json_rpc > api.log";
 		exec($v);
 		$myfile = fopen("api.log", "r") or die("Unable to open file!");
@@ -58,13 +58,14 @@ class TritaniumRpcWallet {
 		return $results;
 	}
 
-	public function postTraceIO($timestamp, $hash, $fee=1) {
+	public function postTraceIO($timestamp, $hash, $url="http://tracebilityblockchain.io/data/", $fee=1) {
 
 		$payload=array();
 		$payload['TIME_STAMP']=$timestamp;
 		$payload['BLOCK_HASH']=$hash;
+		$payload['BLOCK_URL']=$url;
 		$str=json_encode($payload);
-		$output=String2Hex($str);
+		$output=$this->String2Hex($str);
 		$extra="88888888888888888888" . $output;
 
 		$post=array();
@@ -79,10 +80,10 @@ class TritaniumRpcWallet {
 		$tx=array();
 		$tx['address']=MINER_ADDRESS;
 		$tx_amount=$fee*1000000;
-		$tx['amount']=$tx_amount
+		$tx['amount']=$tx_amount;
 		array_push($transfers,$tx);
 
-		$params['transfers']=$c;
+		$params['transfers']=$transfers;
 		$params['fee']=100;
 		$params['anonymity']=7;
 		$params['extra']=$extra;
@@ -133,6 +134,27 @@ class TritaniumRpcWallet {
 			return $output;
 	}
 
+	public function getTraceLedger($firstBlockIndex=0,$blockCount=99999999) {
+			$array=$this->getTransactions($firstBlockIndex,$blockCount);
+			$output=array();
+			$ax=$array['result']['items'];
+			foreach ($ax as $aa) {
+				foreach($aa['transactions'] as $ab) {
+					$xtra=$ab['extra'];
+					if (strpos($xtra,"88888888888888888888")) {
+						$x=substr($xtra,86,999);
+						$y=$this->Hex2String($x);
+						$block_array=json_decode($y,true); 
+                                                if (!isset($block_array["BLOCK_URL"])) {
+						      $block_array['BLOCK_URL']="http://traceabilityblockchain.io/data/";
+                                                }
+                                               array_push($output,$block_array);
+					}
+				}
+			}
+			return $output;
+	}
+
 	public function getOwnerBlocks($owner,$firstBlockIndex,$blockCount) {
 			$data=$this->getTransactions($firstBlockIndex,$blockCount);
 			$output=array();
@@ -169,7 +191,7 @@ class TritaniumRpcWallet {
 		$tx=array();
 		$tx['address']=$address;
 		$tx_amount=$coins*1000000;
-		$tx['amount']=$tx_amount
+		$tx['amount']=$tx_amount;
 		array_push($transfers,$tx);
 
 		$params['transfers']=$c;
@@ -329,13 +351,13 @@ class TritaniumRpcWallet {
 		return $results;
 		
 	}
-	public function getTransactions() {
+	public function getTransactions($firstBlockIndex=0,$blockCount=9999999) {
 		//		curl -d '{"jsonrpc":"2.0","id":1,"password":"passw0rd","method":"getTransactions","params":{"firstBlockIndex":400000,"blockCount":100000}}' http://localhost:8070/json_rpc
 
 		$post=$this->set_post("getTransactions");	
 		$params=array();
 		$params['firstBlockIndex']=(int)$firstBlockIndex;
-		$params['blockCount']=)(int)$blockCount;		
+		$params['blockCount']=(int)$blockCount;		
 		$post['params']=$params;		
 		$u = json_encode($post);
 		$results=$this->callApi($u);
