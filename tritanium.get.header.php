@@ -38,7 +38,7 @@ curl_exec($ch);
 curl_close($ch);
 fclose($fp);
 
-$X=New TritaniumRpcWallet("Loipol229!");
+$X=New TritaniumRpcWallet("MY_PASSWORD");
 $array=$X->getTraceLedger(1,99999);
 
 foreach ($array as $hash) {
@@ -46,7 +46,7 @@ foreach ($array as $hash) {
 	if (!file_exists($fp)) {
 		echo "Header: " . $hash['BLOCK_HASH'] . ".h\r\n";
 		$fp = fopen (PATH . '/' . $hash['BLOCK_HASH'] . '.h' , 'w+');	
-		$ch = curl_init($hash['BLOCK_URL'] . "api.tritanium.header.php?file=" . urlencode($hash['BLOCK_HASH']));
+		$ch = curl_init($hash['BLOCK_URL'] . "api.tritanium.header.php?file=" . urlencode($hash['BLOCK_HASH'] . ".h"));
 		curl_setopt($ch, CURLOPT_TIMEOUT, 500);
 		curl_setopt($ch, CURLOPT_FILE, $fp); 
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -62,7 +62,7 @@ foreach ($array as $hash) {
 	if (!file_exists($fp)) {			
 		$fp = fopen (PATH . '/' . $hash['BLOCK_HASH'] . '.b', 'w+');
 		echo "Block: " . $hash['BLOCK_HASH'] . "h\r\n";
-		$ch = curl_init($hash['BLOCK_URL'] . "api.tritanium.block.php?file=" . urlencode($hash['BLOCK_HASH']));
+		$ch = curl_init($hash['BLOCK_URL'] . "api.tritanium.block.php?file=" . urlencode($hash['BLOCK_HASH'] . "b"));
 		curl_setopt($ch, CURLOPT_TIMEOUT, 50);
 		curl_setopt($ch, CURLOPT_FILE, $fp); 
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
