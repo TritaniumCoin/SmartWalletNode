@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Blockchain Node Communication
  * https://github.com/TritaniumCoin/SmartWalletNode
